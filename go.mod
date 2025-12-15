@@ -1,6 +1,6 @@
 module github.com/jfrog/archiver/v3
 
-go 1.21
+go 1.25.5
 
 require (
 	github.com/andybalholm/brotli v1.1.0

@@ -330,7 +330,38 @@ func writeNewFile(fpath string, in io.Reader, fm os.FileMode) error {
 	return nil
 }
 
-func writeNewSymbolicLink(fpath string, target string) error {
+// checkLinkTarget ensures that resolvedTarget, the path a link at fpath would
+// point to once resolved, does not escape root. This prevents malicious
+// archives from using symlink/hardlink entries to point outside of the
+// extraction destination (e.g. onto arbitrary files on the host).
+func checkLinkTarget(root, resolvedTarget, name string) error {
+	rootAbs, err := filepath.Abs(root)
+	if err != nil {
+		return fmt.Errorf("%s: getting absolute path of root: %v", root, err)
+	}
+	targetAbs, err := filepath.Abs(resolvedTarget)
+	if err != nil {
+		return fmt.Errorf("%s: getting absolute path of link target: %v", resolvedTarget, err)
+	}
+	if !within(rootAbs, targetAbs) {
+		return &IllegalPathError{AbsolutePath: targetAbs, Filename: name}
+	}
+	return nil
+}
+
+// writeNewSymbolicLink creates a symlink at fpath pointing to target. root is
+// the extraction destination that fpath resides in; if target (resolved
+// relative to fpath's directory, per symlink semantics) would resolve outside
+// of root, an *IllegalPathError is returned and no symlink is created.
+func writeNewSymbolicLink(fpath string, target string, root string) error {
+	resolvedTarget := target
+	if !filepath.IsAbs(resolvedTarget) {
+		resolvedTarget = filepath.Join(filepath.Dir(fpath), resolvedTarget)
+	}
+	if err := checkLinkTarget(root, resolvedTarget, target); err != nil {
+		return err
+	}
+
 	err := os.MkdirAll(filepath.Dir(fpath), 0755)
 	if err != nil {
 		return fmt.Errorf("%s: making directory for file: %v", fpath, err)
@@ -351,7 +382,15 @@ func writeNewSymbolicLink(fpath string, target string) error {
 	return nil
 }
 
-func writeNewHardLink(fpath string, target string) error {
+// writeNewHardLink creates a hardlink at fpath pointing to target. root is
+// the extraction destination that fpath resides in; if target would resolve
+// outside of root, an *IllegalPathError is returned and no hardlink is
+// created.
+func writeNewHardLink(fpath string, target string, root string) error {
+	if err := checkLinkTarget(root, target, target); err != nil {
+		return err
+	}
+
 	err := os.MkdirAll(filepath.Dir(fpath), 0755)
 	if err != nil {
 		return fmt.Errorf("%s: making directory for file: %v", fpath, err)

@@ -268,6 +268,7 @@ func (z *Zip) extractNext(to string, dirModeKeeper map[string]os.FileMode) error
 		}
 	}
 
+	root := to
 	to = filepath.Join(to, header.Name)
 	// if a directory, no content; simply make the directory and return
 	if f.IsDir() {
@@ -275,10 +276,10 @@ func (z *Zip) extractNext(to string, dirModeKeeper map[string]os.FileMode) error
 		return mkdir(to, 0755)
 	}
 
-	return z.extractFile(f, to, &header)
+	return z.extractFile(f, to, &header, root)
 }
 
-func (z *Zip) extractFile(f File, to string, header *zip.FileHeader) error {
+func (z *Zip) extractFile(f File, to string, header *zip.FileHeader, root string) error {
 	// do not overwrite existing files, if configured
 	if !z.OverwriteExisting && fileExists(to) {
 		return fmt.Errorf("file already exists: %s", to)
@@ -292,7 +293,7 @@ func (z *Zip) extractFile(f File, to string, header *zip.FileHeader) error {
 		if err != nil {
 			return fmt.Errorf("%s: reading symlink target: %v", header.Name, err)
 		}
-		return writeNewSymbolicLink(to, strings.TrimSpace(buf.String()))
+		return writeNewSymbolicLink(to, strings.TrimSpace(buf.String()), root)
 	}
 
 	return writeNewFile(to, f, f.Mode())
@@ -604,7 +605,7 @@ func (z *Zip) Extract(source, target, destination string) error {
 			}
 			joined := filepath.Join(destination, end)
 
-			err = z.extractFile(f, joined, &zfh)
+			err = z.extractFile(f, joined, &zfh, destination)
 			if err != nil {
 				return fmt.Errorf("extracting file %s: %v", zfh.Name, err)
 			}

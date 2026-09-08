@@ -71,7 +71,7 @@ func (*Tar) CheckPath(to, filename string) error {
 	to, _ = filepath.Abs(to) //explicit the destination folder to prevent that 'string.HasPrefix' check can be 'bypassed' when no destination folder is supplied in input
 	dest := filepath.Join(to, filename)
 	//prevent path traversal attacks
-	if !strings.HasPrefix(dest, to) {
+	if !within(to, dest) {
 		return &IllegalPathError{AbsolutePath: dest, Filename: filename}
 	}
 	return nil

@@ -79,6 +79,11 @@ func TestWithin(t *testing.T) {
 			path2:  "/foo/../outside",
 			expect: false,
 		},
+		{
+			path1:  "/foo",
+			path2:  "/foo/./../outside.file",
+			expect: false,
+		},
 	} {
 		actual := within(tc.path1, tc.path2)
 		if actual != tc.expect {

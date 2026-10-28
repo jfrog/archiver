@@ -421,7 +421,7 @@ func within(parent, sub string) bool {
 	if err != nil {
 		return false
 	}
-	return !strings.Contains(rel, "..")
+	return rel != ".." && !strings.HasPrefix(rel, ".."+string(os.PathSeparator))
 }
 
 // multipleTopLevels returns true if the paths do not

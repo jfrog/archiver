@@ -33,6 +33,8 @@ func requireSymlink(t *testing.T, linkPath, expectedTarget string) {
 	if err != nil {
 		t.Fatalf("reading symlink '%s': %v", linkPath, err)
 	}
+	// On Windows, os.Symlink stores the target with backslashes.
+	expectedTarget = filepath.FromSlash(expectedTarget)
 	if target != expectedTarget {
 		t.Fatalf("expected symlink '%s' to point to '%s', got '%s'", linkPath, expectedTarget, target)
 	}

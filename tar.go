@@ -50,6 +50,12 @@ type Tar struct {
 	// the operation will continue on remaining files.
 	ContinueOnError bool
 
+	// If true, symbolic and hard links whose targets resolve outside the
+	// extraction destination are created as is, instead of being rejected.
+	// Use it only for trusted archives. The paths of the archive entries
+	// themselves are still checked.
+	AllowLinksOutsideDestination bool
+
 	tw *tar.Writer
 	tr *tar.Reader
 
@@ -269,10 +275,10 @@ func (t *Tar) untarFile(f File, destination string, hdr *tar.Header, root string
 	case tar.TypeReg, tar.TypeRegA, tar.TypeChar, tar.TypeBlock, tar.TypeFifo, tar.TypeGNUSparse:
 		return writeNewFile(destination, f, f.Mode())
 	case tar.TypeSymlink:
-		return writeNewSymbolicLink(destination, hdr.Linkname, root)
+		return writeNewSymbolicLink(destination, hdr.Linkname, root, t.AllowLinksOutsideDestination)
 	case tar.TypeLink:
 		target := filepath.Join(strings.TrimSuffix(destination, replaceForwardSlashes(hdr.Name)), hdr.Linkname)
-		return writeNewHardLink(destination, target, root)
+		return writeNewHardLink(destination, target, root, t.AllowLinksOutsideDestination)
 	case tar.TypeXGlobalHeader:
 		return nil // ignore the pax global header from git-generated tarballs
 	default:

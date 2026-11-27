@@ -78,6 +78,12 @@ type Zip struct {
 	// the operation will continue on remaining files.
 	ContinueOnError bool
 
+	// If true, symbolic and hard links whose targets resolve outside the
+	// extraction destination are created as is, instead of being rejected.
+	// Use it only for trusted archives. The paths of the archive entries
+	// themselves are still checked.
+	AllowLinksOutsideDestination bool
+
 	// Compression algorithm
 	FileMethod ZipCompressionMethod
 	zw         *zip.Writer
@@ -293,7 +299,7 @@ func (z *Zip) extractFile(f File, to string, header *zip.FileHeader, root string
 		if err != nil {
 			return fmt.Errorf("%s: reading symlink target: %v", header.Name, err)
 		}
-		return writeNewSymbolicLink(to, strings.TrimSpace(buf.String()), root)
+		return writeNewSymbolicLink(to, strings.TrimSpace(buf.String()), root, z.AllowLinksOutsideDestination)
 	}
 
 	return writeNewFile(to, f, f.Mode())

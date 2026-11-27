@@ -352,14 +352,17 @@ func checkLinkTarget(root, resolvedTarget, name string) error {
 // writeNewSymbolicLink creates a symlink at fpath pointing to target. root is
 // the extraction destination that fpath resides in; if target (resolved
 // relative to fpath's directory, per symlink semantics) would resolve outside
-// of root, an *IllegalPathError is returned and no symlink is created.
-func writeNewSymbolicLink(fpath string, target string, root string) error {
-	resolvedTarget := target
-	if !filepath.IsAbs(resolvedTarget) {
-		resolvedTarget = filepath.Join(filepath.Dir(fpath), resolvedTarget)
-	}
-	if err := checkLinkTarget(root, resolvedTarget, target); err != nil {
-		return err
+// of root, an *IllegalPathError is returned and no symlink is created, unless
+// allowOutsideRoot is true.
+func writeNewSymbolicLink(fpath string, target string, root string, allowOutsideRoot bool) error {
+	if !allowOutsideRoot {
+		resolvedTarget := target
+		if !filepath.IsAbs(resolvedTarget) {
+			resolvedTarget = filepath.Join(filepath.Dir(fpath), resolvedTarget)
+		}
+		if err := checkLinkTarget(root, resolvedTarget, target); err != nil {
+			return err
+		}
 	}
 
 	err := os.MkdirAll(filepath.Dir(fpath), 0755)
@@ -385,10 +388,12 @@ func writeNewSymbolicLink(fpath string, target string, root string) error {
 // writeNewHardLink creates a hardlink at fpath pointing to target. root is
 // the extraction destination that fpath resides in; if target would resolve
 // outside of root, an *IllegalPathError is returned and no hardlink is
-// created.
-func writeNewHardLink(fpath string, target string, root string) error {
-	if err := checkLinkTarget(root, target, target); err != nil {
-		return err
+// created, unless allowOutsideRoot is true.
+func writeNewHardLink(fpath string, target string, root string, allowOutsideRoot bool) error {
+	if !allowOutsideRoot {
+		if err := checkLinkTarget(root, target, target); err != nil {
+			return err
+		}
 	}
 
 	err := os.MkdirAll(filepath.Dir(fpath), 0755)

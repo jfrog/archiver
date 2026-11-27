@@ -10,6 +10,6 @@ require (
 	github.com/klauspost/pgzip v1.2.6
 	github.com/nwaples/rardecode/v2 v2.2.2
 	github.com/pierrec/lz4/v4 v4.1.21
-	github.com/ulikunitz/xz v0.5.12
+	github.com/ulikunitz/xz v0.5.15
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8
 )
